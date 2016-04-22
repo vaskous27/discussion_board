@@ -1,6 +1,6 @@
 <html ng-app="myApp">
 <head>
-  <title>Discusson Board</title>
+  <title>MEAN Exam</title>
    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
    <link href="/styles.css" rel="stylesheet">
   <!-- require angular -->
@@ -11,22 +11,152 @@
 
       myAppModule.config(function ($routeProvider) {
           $routeProvider
+            .when('/dashboard', {
+                templateUrl: 'partials/dashboard.html'
+            })
+             .when('/new_question', {
+                templateUrl: 'partials/new_question.html'
+            })
+            .when('/question/:id/new_answer', {
+                templateUrl: 'partials/new_answer.html'
+            })
+            .when('/question/:id', {
+                templateUrl: 'partials/question.html'
+            })
             .when('/', {
                 templateUrl: 'partials/login.html'
-            })
-             .when('/topics', {
-                templateUrl: 'partials/topics.html'
-            })
-            .when('/topic/:id', {
-                templateUrl: 'partials/posts.html'
-            })
-            .when('/user/:name', {
-                templateUrl: 'partials/user.html'
             })
             .otherwise({
               redirectTo: '/'
             });
        });
+
+        myAppModule.factory('questionsFactory', function($http, $location) {
+          var factory = {};
+          var question = {};
+          var questions = [];
+
+          factory.create = function(new_question,callback) {
+             console.log(new_question)
+            $http.post('/questions/new', new_question).success(function(res) {
+              callback()
+            })
+          }
+
+           factory.index = function(callback) {
+              $http.get('/questions').success(function(output) {
+                questions = output;
+                callback(questions);
+              })
+          }
+
+          factory.getQuestion = function(id, callback) {
+            $http.get('/question/' +id).success(function(data) {
+              question = data;
+              callback(question);
+            })
+  }
+
+
+          return factory;
+      }) 
+
+
+      myAppModule.factory('answersFactory', function($http, $location) {
+
+        var factory = {};
+        var answer = {};
+        var answers = [];
+
+        factory.create = function(new_answer, callback) {
+            $http.post('/answers/new', new_answer).success(function(res) {
+              callback()
+            })
+          }
+
+           factory.index = function(callback) {
+              $http.get('/answers').success(function(output) {
+                answers = output;
+                callback(answers);
+              })
+          }
+
+        return factory;
+      }) 
+
+
+
+      myAppModule.controller('newQuestionController', function($scope, questionsFactory, $location) {
+          $scope.questions = [];
+          $scope.question = {};
+
+         $scope.addQuestion = function() {
+        questionsFactory.create($scope.new_question, function() {
+          questionsFactory.index(function(data) {
+            $scope.questions = data;
+               $location.path('/dashboard');
+            })
+          $scope.new_question = {};
+        })
+      }
+
+    })
+
+     myAppModule.controller('dashboardController', function($scope, questionsFactory, $location) {
+           $scope.questions = [];
+
+           questionsFactory.index(function(data) {
+            $scope.questions = data;
+          })
+
+     }) 
+
+      myAppModule.controller('questionController', function($scope, questionsFactory, $location, $routeParams) {
+           $scope.question = {};
+           var id = $routeParams.id;
+
+           questionsFactory.getQuestion(id, function(data) {
+              $scope.question_id = data._id;
+              $scope.question = data; 
+          })
+
+            questionsFactory.index(function(data) {
+            $scope.questions = data;
+          })
+
+        })
+
+       myAppModule.controller('newAnswerController', function($scope, answersFactory, $location, $routeParams) {
+
+
+         $scope.answers =[];
+         $scope.answer = {};
+        $scope.currentUser = {};
+
+         $scope.addAnswer = function() {
+        answersFactory.create($scope.new_answer, function() {
+          answersFactory.index(function(data) {
+            $scope.answers = data;
+               $location.path('/');
+            })
+          $scope.new_answer = {};
+        })
+
+         answersFactory.index(function(data) {
+            $scope.answers = data;
+          })
+
+          loginFactory.getUser(function(user) {
+            $scope.currentUser = user;
+          })
+        }
+
+
+
+
+        })
+
+
 
       myAppModule.factory('loginFactory', function($http, $location) {
           var factory = {};
@@ -59,96 +189,96 @@
               console.log(new_user);
               loginFactory.login(new_user, function () {
                   loginFactory.getUser(function(user){
-                    $location.path('/topics');
+                    $location.path('/dashboard');
                   })
               })
           }
       })
     
-      myAppModule.factory('topicsFactory', function($http) {
-          var tfactory = {};
-          var topics = [];
-          var topic = {};
+    //   myAppModule.factory('topicsFactory', function($http) {
+    //       var tfactory = {};
+    //       var topics = [];
+    //       var topic = {};
       
-          tfactory.index = function(callback) {
-            $http.get('/topics').success(function(output) {
-              topics = output;
-              callback(topics);
-            })
-          }
+    //       tfactory.index = function(callback) {
+    //         $http.get('/topics').success(function(output) {
+    //           topics = output;
+    //           callback(topics);
+    //         })
+    //       }
 
-          tfactory.create = function(new_topic, userId, callback) {
-            new_topic.userId = userId;
-            $http.post('/topics/new', new_topic).success(function(res) {
-              callback()
-            })
-          }
+    //       tfactory.create = function(new_topic, userId, callback) {
+    //         new_topic.userId = userId;
+    //         $http.post('/topics/new', new_topic).success(function(res) {
+    //           callback()
+    //         })
+    //       }
 
-          tfactory.getTopic = function(id, callback) {
-            console.log(id)
-            $http.get('/topic/'+id).success(function(data) {
-              topic = data;
-              callback(topic);
-            })
-          }
+    //       tfactory.getTopic = function(id, callback) {
+    //         console.log(id)
+    //         $http.get('/topic/'+id).success(function(data) {
+    //           topic = data;
+    //           callback(topic);
+    //         })
+    //       }
 
-          return tfactory;
-      }) 
+    //       return tfactory;
+    //   }) 
 
 
-     myAppModule.controller('topicsController', function($scope, topicsFactory, loginFactory) {
-          $scope.topics = [];
-          $scope.topic = {};
+    //  myAppModule.controller('topicsController', function($scope, topicsFactory, loginFactory) {
+    //       $scope.topics = [];
+    //       $scope.topic = {};
 
-          $scope.currentUser = {};
-          loginFactory.getUser(function(user) {
-            $scope.currentUser = user;
-          })
+    //       $scope.currentUser = {};
+    //       loginFactory.getUser(function(user) {
+    //         $scope.currentUser = user;
+    //       })
       
-          topicsFactory.index(function(data) {
-            $scope.topics = data;
-          })
+    //       topicsFactory.index(function(data) {
+    //         $scope.topics = data;
+    //       })
 
-          $scope.getTopic = function(topic) {
-            topicsFactory.getTopic($scope.topic, function() {
-              $scope.topic = topic;
-            })
-          }
+    //       $scope.getTopic = function(topic) {
+    //         topicsFactory.getTopic($scope.topic, function() {
+    //           $scope.topic = topic;
+    //         })
+    //       }
 
-          $scope.addTopic = function(new_topic) {
-            console.log($scope.new_topic)
-        topicsFactory.create($scope.new_topic, $scope.currentUser._id, function() {
-          topicsFactory.index(function(data) {
-            $scope.topics = data;
-            })
-          $scope.new_topic = {};
-        })
-      }
-    })
-
-
-    // myAppModule.factory('postsFactory', function($http, $location) {
-
+    //       $scope.addTopic = function(new_topic) {
+    //         console.log($scope.new_topic)
+    //     topicsFactory.create($scope.new_topic, $scope.currentUser._id, function() {
+    //       topicsFactory.index(function(data) {
+    //         $scope.topics = data;
+    //         })
+    //       $scope.new_topic = {};
+    //     })
+    //   }
     // })
 
-    myAppModule.controller('postsController', function($scope, loginFactory, topicsFactory) {
 
-          $scope.currentUser = {};
-          loginFactory.getUser(function(user) {
-            $scope.currentUser = user;
-          })
+    // // myAppModule.factory('postsFactory', function($http, $location) {
 
-           $scope.topics = [];
-            topicsFactory.index(function(data) {
-              console.log(data)
-            $scope.topics = data;
-          })
+    // // })
 
-           $scope.topic = {};
-            topicsFactory.getTopic(function(topic) {
-            $scope.topic = topic;
-          })
-    })
+    // myAppModule.controller('postsController', function($scope, loginFactory, topicsFactory) {
+
+    //       $scope.currentUser = {};
+    //       loginFactory.getUser(function(user) {
+    //         $scope.currentUser = user;
+    //       })
+
+    //        $scope.topics = [];
+    //         topicsFactory.index(function(data) {
+    //           console.log(data)
+    //         $scope.topics = data;
+    //       })
+
+    //        $scope.topic = {};
+    //         topicsFactory.getTopic(function(topic) {
+    //         $scope.topic = topic;
+    //       })
+    // })
 
 
 
@@ -158,6 +288,11 @@
 </head>
 <body>
   <div>
+
+      <a href="#/dashboard">Home</a> |
+      <a href="#/new_question">Add a Question</a> |
+      <a href="#/">Logout</a> 
+ 
       <div ng-view="">
       </div>
 </body>

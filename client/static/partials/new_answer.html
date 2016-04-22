@@ -1,0 +1,11 @@
+<div ng-controller='newAnswerController'>
+<div ng-controller='questionController'>
+
+ <form>
+		<h3> New Answer </h3> 
+		<p>Your Answer: <textarea ng-model='new_answer.answer'></textarea></p>
+		<p>Description (Optional): <textarea ng-model='new_answer.description'></textarea></p>
+		<button ng-click="addAnswer()">Press Me!</button>
+	</form>
+
+</div>

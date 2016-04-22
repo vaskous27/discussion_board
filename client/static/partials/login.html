@@ -1,12 +1,11 @@
 <div ng-controller='loginController'>
 
 	<h3>Wat Up Loser!</h3>
-	<h4>Please enter your stupid name that no one cares about to express your even dumber opinions</h4>
+	<h4>Please enter your name to ask dumb questions and give dumb answers to something you know nothing about.</h4>
 
 	<form ng-submit="login(new_user)">
 		<input type='text' ng-model='new_user.name'>
 		<button>Open Sesame</button>
 	</form>
-	<p ng-show='validation()'>{{error}}</p>
 
 </div>
