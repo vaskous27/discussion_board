@@ -1,0 +1,164 @@
+<html ng-app="myApp">
+<head>
+  <title>Discusson Board</title>
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+   <link href="/styles.css" rel="stylesheet">
+  <!-- require angular -->
+  <script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js'></script>
+     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+  <script>
+      var myAppModule = angular.module('myApp', ['ngRoute']);
+
+      myAppModule.config(function ($routeProvider) {
+          $routeProvider
+            .when('/', {
+                templateUrl: 'partials/login.html'
+            })
+             .when('/topics', {
+                templateUrl: 'partials/topics.html'
+            })
+            .when('/topic/:id', {
+                templateUrl: 'partials/posts.html'
+            })
+            .when('/user/:name', {
+                templateUrl: 'partials/user.html'
+            })
+            .otherwise({
+              redirectTo: '/'
+            });
+       });
+
+      myAppModule.factory('loginFactory', function($http, $location) {
+          var factory = {};
+          var currentUser = null;
+
+          factory.getUser = function(callback) {
+            if(currentUser) {
+              callback(currentUser);
+            }
+            else {
+              $location.path('/');
+            }
+          }
+
+          factory.login = function(new_user, callback) {
+            $http.post('/login', new_user).then(function(res) {
+                currentUser = res.data;
+                callback();
+            })
+          }
+          return factory;
+      })
+
+
+      myAppModule.controller('loginController', function($scope, $location, loginFactory) {
+          $scope.users = [];
+          $scope.new_user= {};
+
+          $scope.login = function(new_user) {
+              console.log(new_user);
+              loginFactory.login(new_user, function () {
+                  loginFactory.getUser(function(user){
+                    $location.path('/topics');
+                  })
+              })
+          }
+      })
+    
+      myAppModule.factory('topicsFactory', function($http) {
+          var tfactory = {};
+          var topics = [];
+          var topic = {};
+      
+          tfactory.index = function(callback) {
+            $http.get('/topics').success(function(output) {
+              topics = output;
+              callback(topics);
+            })
+          }
+
+          tfactory.create = function(new_topic, userId, callback) {
+            new_topic.userId = userId;
+            $http.post('/topics/new', new_topic).success(function(res) {
+              callback()
+            })
+          }
+
+          tfactory.getTopic = function(id, callback) {
+            console.log(id)
+            $http.get('/topic/'+id).success(function(data) {
+              topic = data;
+              callback(topic);
+            })
+          }
+
+          return tfactory;
+      }) 
+
+
+     myAppModule.controller('topicsController', function($scope, topicsFactory, loginFactory) {
+          $scope.topics = [];
+          $scope.topic = {};
+
+          $scope.currentUser = {};
+          loginFactory.getUser(function(user) {
+            $scope.currentUser = user;
+          })
+      
+          topicsFactory.index(function(data) {
+            $scope.topics = data;
+          })
+
+          $scope.getTopic = function(topic) {
+            topicsFactory.getTopic($scope.topic, function() {
+              $scope.topic = topic;
+            })
+          }
+
+          $scope.addTopic = function(new_topic) {
+            console.log($scope.new_topic)
+        topicsFactory.create($scope.new_topic, $scope.currentUser._id, function() {
+          topicsFactory.index(function(data) {
+            $scope.topics = data;
+            })
+          $scope.new_topic = {};
+        })
+      }
+    })
+
+
+    // myAppModule.factory('postsFactory', function($http, $location) {
+
+    // })
+
+    myAppModule.controller('postsController', function($scope, loginFactory, topicsFactory) {
+
+          $scope.currentUser = {};
+          loginFactory.getUser(function(user) {
+            $scope.currentUser = user;
+          })
+
+           $scope.topics = [];
+            topicsFactory.index(function(data) {
+              console.log(data)
+            $scope.topics = data;
+          })
+
+           $scope.topic = {};
+            topicsFactory.getTopic(function(topic) {
+            $scope.topic = topic;
+          })
+    })
+
+
+
+
+
+  </script>
+</head>
+<body>
+  <div>
+      <div ng-view="">
+      </div>
+</body>
+</html>
